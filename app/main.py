@@ -1,7 +1,6 @@
 import fastapi
+from app.routes.ping import router as ping_routers
 
 app = fastapi.FastAPI()
 
-@app.get('/ping')
-async def read_main():
-    return { "message" : "Hello World of FastAPI HTTPS" }
+app.include_router(ping_routers)
