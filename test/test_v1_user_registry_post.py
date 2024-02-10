@@ -1,7 +1,5 @@
 import pytest
 
-from app.schemas import users as users_model
-
 
 @pytest.mark.parametrize(
     'request_body, response_code, response_body',

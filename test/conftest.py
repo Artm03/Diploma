@@ -1,21 +1,16 @@
-import asyncio
 import os
-from typing import Dict, Generator
-from sqlalchemy.pool import NullPool
-from fastapi.testclient import TestClient
 
-import pytest
-import pytest_asyncio
+import asyncio
 from httpx import AsyncClient
-from sqlalchemy import insert, text
-from sqlmodel.ext.asyncio.session import AsyncSession
+import pytest_asyncio
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
+from app.db import get_db
 from app.db_base import Base
 from app.main import app
-
-from app.db import get_db
 
 
 TEST_DATABASE_URL = os.environ.get("DATABASE_TEST_URL")
