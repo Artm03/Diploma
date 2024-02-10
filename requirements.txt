@@ -3,3 +3,10 @@ asyncpg==0.28.0
 fastapi==0.100.0
 sqlmodel==0.0.8
 uvicorn==0.22.0
+sqlalchemy-utils
+passlib
+email-validator
+pytest
+pytest-asyncio
+httpx
+eventlet

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api import ping as ping_api
 from app.schemas.ping import Ping
 
 router = APIRouter()
@@ -7,4 +8,4 @@ router = APIRouter()
 
 @router.get('/', response_model=Ping)
 async def get_ping_message():
-    return Ping(message="Hello world!")
+    return await ping_api.handle()
