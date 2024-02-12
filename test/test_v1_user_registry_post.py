@@ -1,5 +1,8 @@
 import pytest
 
+from sqlalchemy import insert
+
+from app.schemas import users as users_model
 
 @pytest.mark.parametrize(
     'request_body, response_code, response_body',
@@ -16,14 +19,14 @@ import pytest
         ),
         (
             {
-                "email": "gavrilovartyo@gmail.com",
+                "email": "test@gmail.com",
                 "first_name": "artyo",
                 "last_name": "artyo",
                 "password": "123456789",
             },
             409,
             {
-                "message": "User with email gavrilovartyo@gmail.com already exists",
+                "message": "User with email test@gmail.com already exists",
             },
         ),
     ],

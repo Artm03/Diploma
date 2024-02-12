@@ -53,7 +53,7 @@ async def prepare_db():
 
 
 @pytest_asyncio.fixture(scope="session")
-async def db_session(engine):
+async def db_session_engine(engine):
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
@@ -62,13 +62,15 @@ async def db_session(engine):
             class_=AsyncSession,
             bind=engine,
         )
-        async with TestingSessionLocal(bind=connection) as session:
-            yield session
-            await session.flush()
-            await session.rollback()
+        yield TestingSessionLocal(bind=connection)
+ 
+
+@pytest_asyncio.fixture(scope="function")
+async def db_session(db_session_engine):
+    yield db_session_engine
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 def override_get_db(prepare_db, db_session):
     async def _override_get_db():
         yield db_session
@@ -76,7 +78,7 @@ def override_get_db(prepare_db, db_session):
     return _override_get_db
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def async_client(override_get_db):
     app.dependency_overrides[get_db] = override_get_db
     async with AsyncClient(app=app, base_url="http://test", follow_redirects=True) as ac:
