@@ -42,7 +42,7 @@ async def test_token(
         )
 
     response = await async_client.post(
-        "/token", data={"username": email, "password": password if email != "ad@gmail.com" else "2222222222", "grant_type": "password"},
+        "/v1/user/login", data={"username": email, "password": password if email != "ad@gmail.com" else "2222222222", "grant_type": "password"},
                            headers={"content-type": "application/x-www-form-urlencoded"},
     )
     assert response.status_code == status

@@ -13,3 +13,4 @@ eventlet
 python-jose
 passlib[bcrypt]
 python-multipart
+fastapi-jwt-auth[asymmetric]

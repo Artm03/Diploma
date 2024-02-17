@@ -14,7 +14,7 @@ from sqlalchemy import (
     Text,
 )
 
-from sqlalchemy_utils import EmailType, force_auto_coercion, PasswordType
+from sqlalchemy_utils import EmailType, force_auto_coercion
 
 
 force_auto_coercion()
@@ -27,14 +27,13 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    email: str | None = None
+    id: int | None = None
 
 
 class UserModel(BaseModel):
     email: EmailStr
     first_name: str
     last_name: str
-    password: str
     disabled: tp.Optional[bool] = None
 
 
@@ -56,4 +55,4 @@ class User(Base):
     last_name = Column(String(50))
     password = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow())
-    disabled = Column(Boolean, nullable=False, default=False)
+    disabled = Column(Boolean, default=False)

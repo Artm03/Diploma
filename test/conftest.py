@@ -60,10 +60,12 @@ async def db_session_engine(engine):
         TestingSessionLocal = sessionmaker(
             expire_on_commit=False,
             class_=AsyncSession,
-            bind=engine,
+            bind=connection,
         )
-        yield TestingSessionLocal(bind=connection)
- 
+        async with TestingSessionLocal() as session:
+            yield session
+            await session.rollback()
+
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session(db_session_engine):
