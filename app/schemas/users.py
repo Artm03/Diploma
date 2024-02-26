@@ -12,8 +12,9 @@ from sqlalchemy import (
     String,
     Boolean,
     Text,
+    ForeignKey
 )
-
+from sqlalchemy.orm import relationship
 from sqlalchemy_utils import EmailType, force_auto_coercion
 
 
@@ -42,6 +43,7 @@ class UserCreate(BaseModel):
     first_name: str
     last_name: str
     password: constr(strip_whitespace=True, min_length=8) # type: ignore
+    email_code: str
     class Config:
         orm_mode = True
 
@@ -56,3 +58,11 @@ class User(Base):
     password = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow())
     disabled = Column(Boolean, default=False)
+
+
+class Sessions(Base):
+    __tablename__ = "users_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    session_id = Column(Text, nullable=False)

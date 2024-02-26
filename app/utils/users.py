@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.schemas import users
 from app import db
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -39,7 +39,12 @@ async def authenticate_user(conn: AsyncSession, user_email: str, password: str):
     return user
 
 
-async def get_current_user(token: tp.Annotated[str, Depends(oauth2_scheme)], conn: tp.Annotated[AsyncSession, Depends(db.get_db)]):
+async def authenticate_user_session(conn: AsyncSession, fingerprint: str, id: int):
+    session = await get_session(id=id, fingerprint=fingerprint, conn=conn)
+    return session is not None
+
+
+async def get_current_user(request: Request, token: tp.Annotated[str, Depends(oauth2_scheme)], conn: tp.Annotated[AsyncSession, Depends(db.get_db)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -47,12 +52,17 @@ async def get_current_user(token: tp.Annotated[str, Depends(oauth2_scheme)], con
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        id: str = payload.get("sub")
+        id: int = int(payload.get("sub"))
         if id is None:
             raise credentials_exception
         token_data = users.TokenData(id=id)
     except JWTError:
         raise credentials_exception
+
+    fingerprint = request.headers.get('X-Fingerprint-ID')
+    if not fingerprint or not await authenticate_user_session(conn=conn, fingerprint=fingerprint, id=id):
+        raise credentials_exception
+
     user = await get_user_by_user_id(conn=conn, id=token_data.id)
     if user is None:
         raise credentials_exception
@@ -80,5 +90,11 @@ async def get_user_by_email(email: str, conn: AsyncSession):
 
 async def get_user_by_user_id(id: int, conn: AsyncSession):
     query = select(users.User.id, users.User.email, users.User.first_name, users.User.last_name, users.User.password, users.User.disabled).where(users.User.id == id)
+    res = (await conn.exec(query)).fetchall()
+    return res[0] if res else None
+
+
+async def get_session(id: int, fingerprint: str, conn: AsyncSession):
+    query = select(users.Sessions.user_id, users.Sessions.session_id).where(users.Sessions.user_id == id, users.Sessions.session_id == fingerprint)
     res = (await conn.exec(query)).fetchall()
     return res[0] if res else None

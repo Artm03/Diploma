@@ -9,8 +9,7 @@ from app.utils import users
 class Settings(BaseModel):
     authjwt_algorithm: str = users.ALGORITHM
     authjwt_decode_algorithms: List[str] = [users.ALGORITHM]
-    authjwt_token_location: set = {'cookies', 'headers'}
-    authjwt_access_cookie_key: str = 'access_token'
+    authjwt_token_location: set = {'cookies'}
     authjwt_refresh_cookie_key: str = 'refresh_token'
     authjwt_cookie_csrf_protect: bool = False
     authjwt_secret_key: str = users.SECRET_KEY

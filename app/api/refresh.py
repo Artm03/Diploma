@@ -17,7 +17,6 @@ async def handle(
 ):
     try:
         Authorize.jwt_refresh_token_required()
-
         user_id = int(Authorize.get_jwt_subject())
         if not user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
@@ -26,6 +25,12 @@ async def handle(
         if not user or user.disabled:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                 detail='The user belonging to this token no logger exist')
+
+        fingerprint = request.headers.get('X-Fingerprint-ID')
+        if not await users.authenticate_user_session(conn=conn, fingerprint=fingerprint, id=user_id):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail='The user belonging to this token no logger exist')
+
         access_token = Authorize.create_access_token(
             subject=str(user.id), expires_time=datetime.timedelta(minutes=users.ACCESS_TOKEN_EXPIRE_MINUTES))
     except Exception as e:

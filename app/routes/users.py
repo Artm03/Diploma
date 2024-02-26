@@ -8,11 +8,12 @@ from app import db
 from app.api import v1_user_registry_post as user_registry_api
 from app.api import token
 from app.api import refresh
+from app.api import recovery
 from app.api import logout
 from app.schemas import users as user_model
 from app.utils import users
 
-from fastapi import Depends
+from fastapi import Depends, Body
 from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter()
@@ -28,12 +29,14 @@ async def v1_user_registry_post(
 
 @router.post("/v1/user/login")
 async def login_for_access_token(
+    request: Request,
+    email_code: str,
     form_data: tp.Annotated[OAuth2PasswordRequestForm, Depends()],
     conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
     response: Response,
     Authorize: tp.Annotated[AuthJWT, Depends()],
 ):
-    return await token.handle(form_data=form_data, conn=conn, response=response, Authorize=Authorize)
+    return await token.handle(request=request, email_code=email_code, form_data=form_data, conn=conn, response=response, Authorize=Authorize)
 
 
 @router.get("/v1/user/me", response_model=user_model.UserModel)
@@ -45,14 +48,28 @@ async def read_users_me(
 
 @router.get("/v1/user/refresh")
 async def refresh_token(
-    response: Response,
     request: Request,
+    response: Response,
     conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
     Authorize: tp.Annotated[AuthJWT, Depends()],
 ):
     return await refresh.handle(conn=conn, request=request, response=response, Authorize=Authorize)
 
 
+@router.get('/v1/user/recovery')
+async def recovery_password(
+    email_code: str,
+    form_data: tp.Annotated[OAuth2PasswordRequestForm, Depends()],
+    conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
+):
+    return await recovery.handle(email_code=email_code, form_data=form_data, conn=conn)
+
+
 @router.get('/v1/user/logout')
-async def logout_user(response: Response, Authorize: AuthJWT = Depends()):
-    return await logout.handle(response=response, Authorize=Authorize)
+async def logout_user(
+    request: Request,
+    response: Response,
+    Authorize: tp.Annotated[AuthJWT, Depends()],
+    conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
+):
+    return await logout.handle(request=request, response=response, Authorize=Authorize, conn=conn)
