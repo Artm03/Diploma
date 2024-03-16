@@ -14,12 +14,11 @@ from sqlalchemy.util._collections import immutabledict
 
 
 async def handle(
-    email_code: str,
-    form_data: OAuth2PasswordRequestForm,
+    form_data: users_models.UserLogin,
     conn: AsyncSession,
 ):
     code = await email_utils.get_email_code(conn=conn, email=form_data.username, code_type='recovery')
-    if not code or code.code != email_code or code.expired_at < datetime.datetime.utcnow():
+    if not code or code.code != form_data.email_code or code.expired_at < datetime.datetime.now(datetime.timezone.utc):
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={"message": "Incorrect or expired email code"},

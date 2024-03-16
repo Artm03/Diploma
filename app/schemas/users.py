@@ -1,6 +1,5 @@
-from pydantic.types import constr
 import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 import typing as tp
 
 from app.db_base import Base
@@ -14,7 +13,6 @@ from sqlalchemy import (
     Text,
     ForeignKey
 )
-from sqlalchemy.orm import relationship
 from sqlalchemy_utils import EmailType, force_auto_coercion
 
 
@@ -38,11 +36,20 @@ class UserModel(BaseModel):
     disabled: tp.Optional[bool] = None
 
 
+class UserAuthorize(BaseModel):
+    username: str
+    password: tp.Annotated[str, Field(min_length=8)]
+
+
+class UserLogin(UserAuthorize):
+    email_code: str
+
+
 class UserCreate(BaseModel):
     email: EmailStr
     first_name: str
     last_name: str
-    password: constr(strip_whitespace=True, min_length=8) # type: ignore
+    password: tp.Annotated[str, Field(min_length=8)]
     email_code: str
     class Config:
         orm_mode = True
@@ -56,7 +63,7 @@ class User(Base):
     first_name = Column(String(50))
     last_name = Column(String(50))
     password = Column(Text, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow())
+    created_at = Column(DateTime, nullable=False, default=datetime.datetime.now(datetime.timezone.utc))
     disabled = Column(Boolean, default=False)
 
 

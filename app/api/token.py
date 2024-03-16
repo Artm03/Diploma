@@ -9,20 +9,18 @@ from app.schemas import users as users_model
 from app.utils import users
 
 from fastapi import HTTPException, status, Response, Request
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 
 
 async def handle(
-    email_code: str,
     request: Request,
-    form_data: OAuth2PasswordRequestForm,
+    form_data: users_model.UserLogin,
     conn: AsyncSession,
     response: Response,
     Authorize: AuthJWT,
 ):
     code = await email_utils.get_email_code(conn=conn, email=form_data.username, code_type='login')
-    if not code or code.code != email_code or code.expired_at < datetime.datetime.utcnow():
+    if not code or code.code != form_data.email_code or code.expired_at < datetime.datetime.now(datetime.timezone.utc):
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={"message": "Incorrect or expired email code"},
@@ -41,16 +39,18 @@ async def handle(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect session",
         )
-    await conn.exec(
-        insert(users_model.Sessions),
-        [
-            {
-                "user_id": user.id,
-                "session_id": fingerprint,
-            },
-        ],
-    )
-    await conn.commit()
+    session = await users.authenticate_user_session(conn=conn, fingerprint=fingerprint, user_id=user.id)
+    if not session:
+        await conn.exec(
+            insert(users_model.Sessions),
+            [
+                {
+                    "user_id": user.id,
+                    "session_id": fingerprint,
+                },
+            ],
+        )
+        await conn.commit()
 
     access_token = Authorize.create_access_token(
         subject=str(user.id), expires_time=datetime.timedelta(minutes=users.ACCESS_TOKEN_EXPIRE_MINUTES))
@@ -58,9 +58,9 @@ async def handle(
     refresh_token = Authorize.create_refresh_token(
         subject=str(user.id), expires_time=datetime.timedelta(minutes=users.REFRESH_TOKEN_EXPIRE_MINUTES))
 
-    response.set_cookie('refresh_token', refresh_token,
-                        users.REFRESH_TOKEN_EXPIRE_MINUTES * 60, users.REFRESH_TOKEN_EXPIRE_MINUTES * 60, '/', None, False, True, 'lax')
-    response.set_cookie('logged_in', 'True', users.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-                        users.ACCESS_TOKEN_EXPIRE_MINUTES * 60, '/', None, False, False, 'lax')
+    response.set_cookie(key='refresh_token', value=refresh_token, max_age=users.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+                        expires=users.REFRESH_TOKEN_EXPIRE_MINUTES * 60, secure=False, httponly=True)
+    response.set_cookie(key='logged_in', value='True', max_age=users.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                        expires=users.ACCESS_TOKEN_EXPIRE_MINUTES * 60, secure=False)
 
     return users_model.Token(access_token=access_token, token_type="bearer")

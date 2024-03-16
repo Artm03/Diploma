@@ -19,7 +19,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 router = APIRouter()
 
 
-@router.post('/v1/user/registry')
+@router.post('/api/v1/user/registry')
 async def v1_user_registry_post(
     user: user_model.UserCreate,
     conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
@@ -27,26 +27,30 @@ async def v1_user_registry_post(
     return await user_registry_api.handle(user=user, conn=conn)
 
 
-@router.post("/v1/user/login")
+@router.post("/api/v1/user/login")
 async def login_for_access_token(
     request: Request,
-    email_code: str,
-    form_data: tp.Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: user_model.UserLogin,
     conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
     response: Response,
     Authorize: tp.Annotated[AuthJWT, Depends()],
 ):
-    return await token.handle(request=request, email_code=email_code, form_data=form_data, conn=conn, response=response, Authorize=Authorize)
+    return await token.handle(request=request, form_data=form_data, conn=conn, response=response, Authorize=Authorize)
 
 
-@router.get("/v1/user/me", response_model=user_model.UserModel)
+@router.get("/api/v1/user/me", response_model=user_model.UserModel)
 async def read_users_me(
     current_user: tp.Annotated[user_model.UserModel, Depends(users.get_current_active_user)],
 ):
-    return current_user
+    return user_model.UserModel(
+        email=current_user.email,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        disabled=current_user.disabled
+    )
 
 
-@router.get("/v1/user/refresh")
+@router.get("/api/v1/user/refresh")
 async def refresh_token(
     request: Request,
     response: Response,
@@ -56,16 +60,15 @@ async def refresh_token(
     return await refresh.handle(conn=conn, request=request, response=response, Authorize=Authorize)
 
 
-@router.get('/v1/user/recovery')
+@router.get('/api/v1/user/recovery')
 async def recovery_password(
-    email_code: str,
-    form_data: tp.Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: tp.Annotated[user_model.UserLogin, Body()],
     conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
 ):
-    return await recovery.handle(email_code=email_code, form_data=form_data, conn=conn)
+    return await recovery.handle(form_data=form_data, conn=conn)
 
 
-@router.get('/v1/user/logout')
+@router.get('/api/v1/user/logout')
 async def logout_user(
     request: Request,
     response: Response,

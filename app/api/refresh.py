@@ -7,6 +7,7 @@ from app.schemas import users as users_model
 from app.utils import users
 
 from fastapi import HTTPException, status, Response, Request
+from fastapi.responses import JSONResponse
 
 
 async def handle(
@@ -15,24 +16,10 @@ async def handle(
     request: Request,
     Authorize: AuthJWT,
 ):
+    user_id: int
     try:
         Authorize.jwt_refresh_token_required()
         user_id = int(Authorize.get_jwt_subject())
-        if not user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail='Could not refresh access token')
-        user: users_model.User = await users.get_user_by_user_id(id=user_id, conn=conn)
-        if not user or user.disabled:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail='The user belonging to this token no logger exist')
-
-        fingerprint = request.headers.get('X-Fingerprint-ID')
-        if not await users.authenticate_user_session(conn=conn, fingerprint=fingerprint, id=user_id):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail='The user belonging to this token no logger exist')
-
-        access_token = Authorize.create_access_token(
-            subject=str(user.id), expires_time=datetime.timedelta(minutes=users.ACCESS_TOKEN_EXPIRE_MINUTES))
     except Exception as e:
         error = e.__class__.__name__
         if error == 'MissingTokenError':
@@ -41,7 +28,24 @@ async def handle(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-    response.set_cookie('logged_in', 'True', users.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-                        users.ACCESS_TOKEN_EXPIRE_MINUTES * 60, '/', None, False, False, 'lax')
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Could not refresh access token')
+    user: users_model.User = await users.get_user_by_user_id(id=user_id, conn=conn)
+    if not user or user.disabled:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='User does not exists')
+
+    fingerprint = request.headers.get('X-Fingerprint-ID')
+    print("KEKEKEKKE", fingerprint)
+    if (fingerprint is None) or not (await users.authenticate_user_session(conn=conn, fingerprint=fingerprint, user_id=user_id)):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='The user belonging to this token no longer exist')
+
+    access_token = Authorize.create_access_token(
+        subject=str(user.id), expires_time=datetime.timedelta(minutes=users.ACCESS_TOKEN_EXPIRE_MINUTES))
+   
+    response.set_cookie(key='logged_in', value='True', max_age=users.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                        expires=users.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
 
     return users_model.Token(access_token=access_token, token_type="bearer")

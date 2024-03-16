@@ -6,6 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import db
 from app.schemas.email import EmailSchema
+from app.schemas import users as users_models
 from app.api import email_registry
 from app.api import email_login
 from app.api import email_recovery
@@ -14,7 +15,7 @@ from app.api import email_recovery
 router = APIRouter()
 
 
-@router.post("/v1/email/registry")
+@router.post("/api/v1/email/registry")
 async def send_register(
     email: tp.Annotated[EmailSchema, Body()],
     conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
@@ -23,16 +24,16 @@ async def send_register(
     return await email_registry.handle(email=email, conn=conn, background_tasks=background_tasks)
 
 
-@router.post("/v1/email/login")
+@router.post("/api/v1/email/login")
 async def send_login(
-    email: tp.Annotated[EmailSchema, Body()],
+    user_request: tp.Annotated[users_models.UserAuthorize, Body()],
     conn: tp.Annotated[AsyncSession, Depends(db.get_db)],
     background_tasks: BackgroundTasks,
 ):
-    return await email_login.handle(email=email, conn=conn, background_tasks=background_tasks)
+    return await email_login.handle(user_request=user_request, conn=conn, background_tasks=background_tasks)
 
 
-@router.post("/v1/email/recovery")
+@router.post("/api/v1/email/recovery")
 async def send_recovery(
     email: tp.Annotated[EmailSchema, Body()],
     conn: tp.Annotated[AsyncSession, Depends(db.get_db)],

@@ -15,3 +15,9 @@ passlib[bcrypt]
 python-multipart
 fastapi-jwt-auth[asymmetric]
 fastapi-mail
+fastapi-storages
+cmake
+opencv-python
+pyproject.toml
+dlib
+face_recognition

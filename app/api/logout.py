@@ -13,6 +13,7 @@ async def handle(
     Authorize: AuthJWT,
     conn: AsyncSession,
 ):
+    # TO DO: Change logic for logout
     fingerprint = request.headers.get('X-Fingerprint-ID')
     conn.exec(delete(users.Sessions).where(users.Sessions.session_id == fingerprint))
     await conn.commit()

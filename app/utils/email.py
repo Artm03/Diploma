@@ -66,14 +66,14 @@ async def send_code(
 
     html = f"""<p>Your {code_type} code is {code}</p> """
     if email_code:
-        if email_code.created_at + datetime.timedelta(minutes=1) > datetime.datetime.utcnow():
+        if email_code.created_at + datetime.timedelta(minutes=1) > datetime.datetime.now(datetime.timezone.utc):
             return JSONResponse(status_code=400, content={"message": "please try later"})
         await conn.exec(
             update(email_models.EmailSend).where(email_models.EmailSend.id == email_code.id),
             [
                 {
-                    "created_at": datetime.datetime.utcnow(),
-                    "expired_at": (datetime.datetime.utcnow() + datetime.timedelta(minutes=10)),
+                    "created_at": datetime.datetime.now(datetime.timezone.utc),
+                    "expired_at": (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=10)),
                     "code": code
                 },
             ],

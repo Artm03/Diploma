@@ -6,6 +6,6 @@ from app.schemas.ping import Ping
 router = APIRouter()
 
 
-@router.get('/', response_model=Ping)
+@router.get('/api/ping', response_model=Ping)
 async def get_ping_message():
     return await ping_api.handle()

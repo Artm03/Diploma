@@ -4,15 +4,16 @@ services:
 
   web:
     build: ./
-    command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 3000
+    command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8080
     volumes:
       - ./:/usr/src/app
     ports:
-      - 3000:3000
+      - 8080:8080
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/foo
       - DATABASE_TEST_URL=postgresql+asyncpg://postgres:postgres@db:5432/test_db
       - TEST_DB_NAME=test_db
+      - PATH_IMAGES=/usr/src/app/images/
       - POSTGRES_DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/postgres
     depends_on:
       - db

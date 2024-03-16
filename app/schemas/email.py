@@ -25,7 +25,7 @@ class EmailSend(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(EmailType(50), nullable=False, index=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow())
-    expired_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow() + datetime.timedelta(minutes=10))
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.datetime.now(datetime.timezone.utc))
+    expired_at = Column(DateTime(timezone=True), nullable=False, default=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=10))
     code = Column(Text, nullable=False)
     type = Column(Text, nullable=False)

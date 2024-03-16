@@ -14,7 +14,7 @@ from app.utils import users
 
 async def handle(user: users_model.UserCreate, conn: AsyncSession):
     email_code = await email_utils.get_email_code(conn=conn, email=user.email, code_type='registry')
-    if not email_code or email_code.code != user.email_code or email_code.expired_at < datetime.datetime.utcnow():
+    if not email_code or email_code.code != user.email_code or email_code.expired_at < datetime.datetime.now(datetime.timezone.utc):
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={"message": "Incorrect or expired email code"},
